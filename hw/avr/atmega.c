@@ -65,7 +65,15 @@ typedef struct AtmegaMcuClass AtmegaMcuClass;
 DECLARE_CLASS_CHECKERS(AtmegaMcuClass, ATMEGA_MCU,
                        TYPE_ATMEGA_MCU)
 
-static const peripheral_cfg dev168_328[PERIFMAX] = {
+static const peripheral_cfg dev8[PERIFMAX] = {
+    [USART0]        = {  0x2b },
+    [TIMER2]        = {  0x45, 0, 0, 0x59, 0x58, false },
+    [TIMER1]        = {  0x4f, 0, 0, 0x59, 0x58, true },
+    [TIMER0]        = {  0x53, 0, 0, 0x59, 0x58, false },
+    [GPIOD]         = {  0x30 },
+    [GPIOC]         = {  0x33 },
+    [GPIOB]         = {  0x36 },
+}, dev168_328[PERIFMAX] = {
     [USART0]        = {  0xc0, POWER0, 1 },
     [TIMER2]        = {  0xb0, POWER0, 6, 0x70, 0x37, false },
     [TIMER1]        = {  0x80, POWER0, 3, 0x6f, 0x36, true },
@@ -131,7 +139,18 @@ enum AtmegaIrq {
 #define TIMER_COMPC_IRQ(n)  (n * TIMER_IRQ_COUNT + TIMER0_COMPC_IRQ)
 #define TIMER_OVF_IRQ(n)    (n * TIMER_IRQ_COUNT + TIMER0_OVF_IRQ)
 
-static const uint8_t irq168_328[IRQ_COUNT] = {
+static const uint8_t irq8[IRQ_COUNT] = {
+    [TIMER2_COMPA_IRQ]      = 3,
+    [TIMER2_OVF_IRQ]        = 4,
+    [TIMER1_CAPT_IRQ]       = 5,
+    [TIMER1_COMPA_IRQ]      = 6,
+    [TIMER1_COMPB_IRQ]      = 7,
+    [TIMER1_OVF_IRQ]        = 8,
+    [TIMER0_OVF_IRQ]        = 9,
+    [USART0_RXC_IRQ]        = 11,
+    [USART0_DRE_IRQ]        = 12,
+    [USART0_TXC_IRQ]        = 13,
+}, irq168_328[IRQ_COUNT] = {
     [TIMER2_COMPA_IRQ]      = 8,
     [TIMER2_COMPB_IRQ]      = 9,
     [TIMER2_OVF_IRQ]        = 10,
@@ -367,6 +386,21 @@ static void atmega_class_init(ObjectClass *oc, void *data)
     dc->user_creatable = false;
 }
 
+static void atmega8_class_init(ObjectClass *oc, void *data)
+{
+    AtmegaMcuClass *amc = ATMEGA_MCU_CLASS(oc);
+
+    amc->cpu_type = AVR_CPU_TYPE_NAME("avr4");
+    amc->flash_size = 8 * KiB;
+    amc->eeprom_size = 512;
+    amc->sram_size = 1 * KiB;
+    amc->io_size = 256;
+    amc->gpio_count = 23;
+    amc->adc_count = 8;
+    amc->irq = irq8;
+    amc->dev = dev8;
+};
+
 static void atmega168_class_init(ObjectClass *oc, void *data)
 {
     AtmegaMcuClass *amc = ATMEGA_MCU_CLASS(oc);
@@ -428,6 +462,11 @@ static void atmega2560_class_init(ObjectClass *oc, void *data)
 };
 
 static const TypeInfo atmega_mcu_types[] = {
+    {
+        .name           = TYPE_ATMEGA8_MCU,
+        .parent         = TYPE_ATMEGA_MCU,
+        .class_init     = atmega8_class_init,
+    },
     {
         .name           = TYPE_ATMEGA168_MCU,
         .parent         = TYPE_ATMEGA_MCU,

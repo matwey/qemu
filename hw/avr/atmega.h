@@ -18,6 +18,7 @@
 #include "qom/object.h"
 
 #define TYPE_ATMEGA_MCU     "ATmega"
+#define TYPE_ATMEGA8_MCU    "ATmega8"
 #define TYPE_ATMEGA168_MCU  "ATmega168"
 #define TYPE_ATMEGA328_MCU  "ATmega328"
 #define TYPE_ATMEGA1280_MCU "ATmega1280"

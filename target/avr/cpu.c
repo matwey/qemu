@@ -250,6 +250,34 @@ static void avr_cpu_class_init(ObjectClass *oc, void *data)
 }
 
 /*
+ * Setting features of AVR core type avr4
+ * --------------------------------------
+ *
+ * This type of AVR core is present in the following AVR MCUs:
+ *
+ * atmega48, atmega48a, atmega48p, atmega48pa, atmega48pb, atmega8, atmega8a,
+ * atmega8hva, atmega88, atmega88a, atmega88p, atmega88pa, atmega88pb, atmega8515,
+ * atmega8535, ata6285, ata6286, ata6289, ata6612c, at90pwm1, at90pwm2, at90pwm2b,
+ * at90pwm3, at90pwm3b, at90pwm81
+ */
+static void avr_avr4_initfn(Object *obj)
+{
+    AVRCPU *cpu = AVR_CPU(obj);
+    CPUAVRState *env = &cpu->env;
+
+    set_avr_feature(env, AVR_FEATURE_LPM);
+    set_avr_feature(env, AVR_FEATURE_IJMP_ICALL);
+    set_avr_feature(env, AVR_FEATURE_ADIW_SBIW);
+    set_avr_feature(env, AVR_FEATURE_SRAM);
+
+    set_avr_feature(env, AVR_FEATURE_2_BYTE_PC);
+    set_avr_feature(env, AVR_FEATURE_2_BYTE_SP);
+    set_avr_feature(env, AVR_FEATURE_JMP_CALL);
+    set_avr_feature(env, AVR_FEATURE_MOVW);
+    set_avr_feature(env, AVR_FEATURE_MUL);
+}
+
+/*
  * Setting features of AVR core type avr5
  * --------------------------------------
  *
@@ -393,6 +421,7 @@ static const TypeInfo avr_cpu_type_info[] = {
         .class_init = avr_cpu_class_init,
         .abstract = true,
     },
+    DEFINE_AVR_CPU_TYPE("avr4", avr_avr4_initfn),
     DEFINE_AVR_CPU_TYPE("avr5", avr_avr5_initfn),
     DEFINE_AVR_CPU_TYPE("avr51", avr_avr51_initfn),
     DEFINE_AVR_CPU_TYPE("avr6", avr_avr6_initfn),

@@ -84,6 +84,20 @@ static void arduino_duemilanove_class_init(ObjectClass *oc, void *data)
     amc->xtal_hz    = 16 * 1000 * 1000;
 };
 
+static void arduino_uno_rev1_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+    ArduinoMachineClass *amc = ARDUINO_MACHINE_CLASS(oc);
+
+    /*
+     * https://www.arduino.cc/en/uploads/Main/arduino-uno-schematic.pdf
+     */
+    mc->desc        = "Arduino UNO (ATmega8)";
+    mc->alias       = "uno-rev1";
+    amc->mcu_type   = TYPE_ATMEGA8_MCU;
+    amc->xtal_hz    = 16 * 1000 * 1000;
+};
+
 static void arduino_uno_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -91,7 +105,7 @@ static void arduino_uno_class_init(ObjectClass *oc, void *data)
 
     /*
      * https://store.arduino.cc/arduino-uno-rev3
-     * https://www.arduino.cc/en/uploads/Main/arduino-uno-schematic.pdf
+     * https://www.arduino.cc/en/uploads/Main/Arduino_Uno_Rev3-schematic.pdf
      */
     mc->desc        = "Arduino UNO (ATmega328P)";
     mc->alias       = "uno";
@@ -134,6 +148,10 @@ static const TypeInfo arduino_machine_types[] = {
         .name          = MACHINE_TYPE_NAME("arduino-duemilanove"),
         .parent        = TYPE_ARDUINO_MACHINE,
         .class_init    = arduino_duemilanove_class_init,
+    }, {
+        .name          = MACHINE_TYPE_NAME("arduino-uno-rev1"),
+        .parent        = TYPE_ARDUINO_MACHINE,
+        .class_init    = arduino_uno_rev1_class_init,
     }, {
         .name          = MACHINE_TYPE_NAME("arduino-uno"),
         .parent        = TYPE_ARDUINO_MACHINE,
