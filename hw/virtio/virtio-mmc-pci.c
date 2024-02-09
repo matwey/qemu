@@ -31,14 +31,19 @@ static void virtio_mmc_pci_realize(VirtIOPCIProxy *vpci_dev, Error **errp)
     DeviceState *vdev = DEVICE(&vmmc->vdev);
 
     qdev_set_parent_bus(vdev, BUS(&vpci_dev->bus), errp);
+    // if (!qdev_realize(vdev, BUS(&vpci_dev->bus), errp)) {
+    //     printf("[mmcpcidebug] Virtio MMC PCI not realized\n");
+    //     return;
+    // }
 
     virtio_pci_force_virtio_1(vpci_dev);
     object_property_set_bool(OBJECT(vdev), "realized", true, errp);
+    printf("[mmcpcidebug] Virtio MMC PCI realized\n");
 }
 
 static void virtio_mmc_pci_class_init(ObjectClass *klass, void *data)
 {
-    printf("virtio_mmc_pci_class_init\n");
+    printf("[mmcpcidebug] virtio_mmc_pci_class_init called\n");
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtioPCIClass *k = VIRTIO_PCI_CLASS(klass);
     PCIDeviceClass *pcidev_k = PCI_DEVICE_CLASS(klass);
