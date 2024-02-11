@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
-    printf("[mmcpcidebug] handle_input called\n");
+    printf("[mmcpcidebug] virtio-mmc.c: handle_input called\n");
 
     VirtQueueElement *elem;
     uint32_t data;
@@ -25,19 +25,19 @@ static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
 }
 
 static void virtio_mmc_realize(DeviceState *dev, Error **errp) {
+    printf("[mmcpcidebug] virtio-mmc.c: virtio_mmc_realize called\n");
     VirtIODevice *vdev = VIRTIO_DEVICE(dev);
     VirtIOMMC *vmmc = VIRTIO_MMC(dev);
 
     virtio_init(vdev, VIRTIO_ID_MMC, 0);
 
     vmmc->vq = virtio_add_queue(vdev, 1, handle_input);
-    printf("[mmcpcidebug] Virtio MMC realized\n");
 }
 
 static void virtio_mmc_unrealize(DeviceState *dev) {
+    printf("[mmcpcidebug] virtio-mmc.c: virtio_mmc_unrealize called\n");
     VirtIODevice *vdev = VIRTIO_DEVICE(dev);
     virtio_cleanup(vdev);
-    printf("[mmcpcidebug] Virtio MMC unrealized\n");
 }
 
 static uint64_t virtio_mmc_get_features(VirtIODevice *vdev, uint64_t features, Error **errp) {
@@ -45,6 +45,7 @@ static uint64_t virtio_mmc_get_features(VirtIODevice *vdev, uint64_t features, E
 }
 
 static void virtio_mmc_class_init(ObjectClass *klass, void *data) {
+    printf("[mmcpcidebug] virtio-mmc.c: virtio_mmc_class_init called\n");
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtioDeviceClass *k = VIRTIO_DEVICE_CLASS(klass);
 
@@ -52,7 +53,6 @@ static void virtio_mmc_class_init(ObjectClass *klass, void *data) {
     k->realize = virtio_mmc_realize;
     k->unrealize = virtio_mmc_unrealize;
     k->get_features = virtio_mmc_get_features;
-    printf("[mmcpcidebug] Virtio MMC class initialized\n");
 }
 
 static const TypeInfo virtio_mmc_info = {
@@ -64,6 +64,7 @@ static const TypeInfo virtio_mmc_info = {
 
 static void virtio_register_types(void)
 {
+    printf("[mmcpcidebug] virtio-mmc.c: virtio_register_types called\n");
     type_register_static(&virtio_mmc_info);
 }
 

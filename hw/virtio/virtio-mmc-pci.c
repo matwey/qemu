@@ -1,3 +1,5 @@
+#include "hw/pci/pci_ids.h"
+#include "hw/qdev-core.h"
 #include "qemu/osdep.h"
 
 #include "hw/virtio/virtio-pci.h"
@@ -19,6 +21,7 @@ struct VirtIOMMCPCI {
 
 static void virtio_mmc_pci_instance_init(Object *obj)
 {
+    printf("[mmcpcidebug] virtio-mmc-pci.c: virtio_mmc_pci_instance_init called\n");
     VirtIOMMCPCI *dev = VIRTIO_MMC_PCI(obj);
 
     virtio_instance_init_common(obj, &dev->vdev, sizeof(dev->vdev),
@@ -27,6 +30,7 @@ static void virtio_mmc_pci_instance_init(Object *obj)
 
 static void virtio_mmc_pci_realize(VirtIOPCIProxy *vpci_dev, Error **errp)
 {
+    printf("[mmcpcidebug] virtio-mmc-pci.c: virtio_mmc_pci_realize called\n");
     VirtIOMMCPCI *vmmc = VIRTIO_MMC_PCI(vpci_dev);
     DeviceState *vdev = DEVICE(&vmmc->vdev);
 
@@ -38,22 +42,20 @@ static void virtio_mmc_pci_realize(VirtIOPCIProxy *vpci_dev, Error **errp)
 
     virtio_pci_force_virtio_1(vpci_dev);
     object_property_set_bool(OBJECT(vdev), "realized", true, errp);
-    printf("[mmcpcidebug] Virtio MMC PCI realized\n");
 }
 
 static void virtio_mmc_pci_class_init(ObjectClass *klass, void *data)
 {
-    printf("[mmcpcidebug] virtio_mmc_pci_class_init called\n");
+    printf("[mmcpcidebug] virtio-mmc-pci.c: virtio_mmc_pci_class_init called\n");
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtioPCIClass *k = VIRTIO_PCI_CLASS(klass);
     PCIDeviceClass *pcidev_k = PCI_DEVICE_CLASS(klass);
 
     k->realize = virtio_mmc_pci_realize;
-    set_bit(DEVICE_CATEGORY_MISC, dc->categories);
+    set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 
-    pcidev_k->vendor_id = 0xabcd;
     pcidev_k->revision = VIRTIO_PCI_ABI_VERSION;
-    pcidev_k->class_id = PCI_CLASS_OTHERS;
+    pcidev_k->class_id = PCI_CLASS_MEMORY_FLASH;
 }
 
 static const VirtioPCIDeviceTypeInfo virtio_mmc_pci_info = {
@@ -66,6 +68,7 @@ static const VirtioPCIDeviceTypeInfo virtio_mmc_pci_info = {
 
 static void virtio_mmc_pci_register(void)
 {
+    printf("[mmcpcidebug] virtio-mmc-pci.c: virtio_mmc_pci_register called\n");
     virtio_pci_types_register(&virtio_mmc_pci_info);
 }
 
