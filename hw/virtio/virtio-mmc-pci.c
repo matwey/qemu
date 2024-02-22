@@ -1,5 +1,3 @@
-#include "hw/pci/pci_ids.h"
-#include "hw/qdev-core.h"
 #include "qemu/osdep.h"
 
 #include "hw/virtio/virtio-pci.h"

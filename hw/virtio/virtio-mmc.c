@@ -1,3 +1,4 @@
+#include "hw/sd/sd.h"
 #include "qemu/osdep.h"
 
 #include "hw/virtio/virtio.h"
@@ -5,22 +6,39 @@
 #include "hw/virtio/virtio-mmc.h"
 #include "qemu/iov.h"
 #include <stdint.h>
+#include <stdio.h>
+
+typedef struct virtio_mmc_req {
+	uint32_t opcode;
+	uint32_t arg;
+	uint32_t flags;
+	uint32_t blocks;
+	uint32_t blksz;
+} virtio_mmc_req;
+
+static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, uint8_t *response) {
+    printf("[mmcpcidebug] virtio-mmc.c: handle_mmc_request called\n");
+}
 
 static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
     printf("[mmcpcidebug] virtio-mmc.c: handle_input called\n");
 
     VirtQueueElement *elem;
-    uint32_t data;
+    virtio_mmc_req data;
 
     elem = virtqueue_pop(vq, sizeof(VirtQueueElement));
 
-    iov_to_buf(elem->out_sg, elem->out_num, 0, &data, sizeof(uint32_t));
+    iov_to_buf(elem->out_sg, elem->out_num, 0, &data, sizeof(virtio_mmc_req));
 
-    data *= data;
+    printf("[mmcpcidebug] qemu, virtio-mmc.c: opcode = %d\n", data.opcode);
 
-    iov_from_buf(elem->in_sg, elem->in_num, 0, &data, sizeof(uint32_t));
+    // iov_from_buf(elem->in_sg, elem->in_num, 0, &data, sizeof(uint32_t));
 
-    virtqueue_push(vq, elem, 1);
+    // virtqueue_push(vq, elem, 1);
+
+    uint8_t response;
+    handle_mmc_request(vdev, &data, &response);
+
     virtio_notify(vdev, vq);
 }
 
@@ -29,6 +47,7 @@ static void virtio_mmc_realize(DeviceState *dev, Error **errp) {
     VirtIODevice *vdev = VIRTIO_DEVICE(dev);
     VirtIOMMC *vmmc = VIRTIO_MMC(dev);
 
+    printf("[mmcpcidebug] virtio-mmc.c: VIRTIO_ID_MMC = %d\n", VIRTIO_ID_MMC);
     virtio_init(vdev, VIRTIO_ID_MMC, 0);
 
     vmmc->vq = virtio_add_queue(vdev, 1, handle_input);

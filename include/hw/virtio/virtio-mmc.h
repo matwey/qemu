@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hw/sd/sd.h"
 #include "hw/virtio/virtio.h"
 
 #define VIRTIO_ID_MMC 42
