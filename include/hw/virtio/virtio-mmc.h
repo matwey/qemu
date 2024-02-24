@@ -1,7 +1,7 @@
 #pragma once
 
-#include "hw/sd/sd.h"
 #include "hw/virtio/virtio.h"
+#include "hw/sd/sd.h"
 
 #define VIRTIO_ID_MMC 42
 
@@ -14,4 +14,5 @@
 typedef struct VirtIOMMC {
     VirtIODevice parent_obj;
     VirtQueue *vq;
+    SDBus sdbus;
 } VirtIOMMC;

@@ -1,4 +1,3 @@
-#include "hw/sd/sd.h"
 #include "qemu/osdep.h"
 
 #include "hw/virtio/virtio.h"
@@ -18,6 +17,18 @@ typedef struct virtio_mmc_req {
 
 static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, uint8_t *response) {
     printf("[mmcpcidebug] virtio-mmc.c: handle_mmc_request called\n");
+
+    VirtIOMMC *vmmc = VIRTIO_MMC(vdev);
+
+    SDRequest sdreq;
+    sdreq.cmd = (uint8_t)req->opcode;
+    sdreq.arg = req->arg;
+
+    printf("[mmcpcidebug] qemu, virtio-mmc.c: sdreq.cmd = %d\n", sdreq.cmd);
+    
+    sdbus_do_command(&vmmc->sdbus, &sdreq, response);
+
+    printf("[mmcpcidebug] qemu, virtio-mmc.c: response = %d\n", *response);
 }
 
 static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
@@ -51,6 +62,8 @@ static void virtio_mmc_realize(DeviceState *dev, Error **errp) {
     virtio_init(vdev, VIRTIO_ID_MMC, 0);
 
     vmmc->vq = virtio_add_queue(vdev, 1, handle_input);
+
+    qbus_init(&vmmc->sdbus, sizeof(vmmc->sdbus), TYPE_SD_BUS, dev, "sd-bus");
 }
 
 static void virtio_mmc_unrealize(DeviceState *dev) {
