@@ -8,27 +8,33 @@
 #include <stdio.h>
 
 typedef struct virtio_mmc_req {
+    bool is_request;
 	uint32_t opcode;
 	uint32_t arg;
 	uint32_t flags;
 	uint32_t blocks;
 	uint32_t blksz;
+
+    bool is_set_ios;
+    uint16_t vdd;
 } virtio_mmc_req;
 
 static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, uint8_t *response) {
     printf("[mmcpcidebug] virtio-mmc.c: handle_mmc_request called\n");
 
     VirtIOMMC *vmmc = VIRTIO_MMC(vdev);
+    SDBus *sdbus = &vmmc->sdbus;
 
-    SDRequest sdreq;
-    sdreq.cmd = (uint8_t)req->opcode;
-    sdreq.arg = req->arg;
-
-    printf("[mmcpcidebug] qemu, virtio-mmc.c: sdreq.cmd = %d, arg = %d\n", sdreq.cmd, sdreq.arg);
-    
-    sdbus_do_command(&vmmc->sdbus, &sdreq, response);
-
-    printf("[mmcpcidebug] qemu, virtio-mmc.c: response = %d\n", *response);
+    if(req->is_request) {
+        SDRequest sdreq;
+        sdreq.cmd = (uint8_t)req->opcode;
+        sdreq.arg = req->arg;
+        printf("[mmcpcidebug] virtio-mmc.c: sdreq.cmd = %d, arg = %d\n", sdreq.cmd, sdreq.arg);
+        sdbus_do_command(sdbus, &sdreq, response);
+    } else if(req->is_set_ios) {
+        printf("[mmcpcidebug] virtio-mmc.c: setting voltage = %d\n", req->vdd);
+        sdbus_set_voltage(sdbus, req->vdd);
+    }
 }
 
 static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
