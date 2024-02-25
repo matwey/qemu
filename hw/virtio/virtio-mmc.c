@@ -24,7 +24,7 @@ static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, uint8_t 
     sdreq.cmd = (uint8_t)req->opcode;
     sdreq.arg = req->arg;
 
-    printf("[mmcpcidebug] qemu, virtio-mmc.c: sdreq.cmd = %d\n", sdreq.cmd);
+    printf("[mmcpcidebug] qemu, virtio-mmc.c: sdreq.cmd = %d, arg = %d\n", sdreq.cmd, sdreq.arg);
     
     sdbus_do_command(&vmmc->sdbus, &sdreq, response);
 
@@ -41,14 +41,12 @@ static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
 
     iov_to_buf(elem->out_sg, elem->out_num, 0, &data, sizeof(virtio_mmc_req));
 
-    printf("[mmcpcidebug] qemu, virtio-mmc.c: opcode = %d\n", data.opcode);
-
-    // iov_from_buf(elem->in_sg, elem->in_num, 0, &data, sizeof(uint32_t));
-
-    // virtqueue_push(vq, elem, 1);
-
     uint8_t response;
     handle_mmc_request(vdev, &data, &response);
+
+    iov_from_buf(elem->in_sg, elem->in_num, 0, &response, sizeof(uint8_t));
+
+    virtqueue_push(vq, elem, 1);
 
     virtio_notify(vdev, vq);
 }
@@ -64,6 +62,8 @@ static void virtio_mmc_realize(DeviceState *dev, Error **errp) {
     vmmc->vq = virtio_add_queue(vdev, 1, handle_input);
 
     qbus_init(&vmmc->sdbus, sizeof(vmmc->sdbus), TYPE_SD_BUS, dev, "sd-bus");
+
+    printf("[mmcpcidebug] virtio-mmc.c: sdbus inserted before setting is %d\n", sdbus_get_inserted(&vmmc->sdbus));
 }
 
 static void virtio_mmc_unrealize(DeviceState *dev) {
