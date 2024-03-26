@@ -4,6 +4,9 @@
 #include "qemu/typedefs.h"
 #include "hw/virtio/virtio-mmc.h"
 #include "qemu/iov.h"
+#include "sysemu/block-backend-global-state.h"
+#include "hw/sd/sdcard_legacy.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -22,18 +25,16 @@ typedef struct virtio_mmc_req {
 static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, uint8_t *response) {
     printf("[mmcpcidebug] virtio-mmc.c: handle_mmc_request called\n");
 
-    VirtIOMMC *vmmc = VIRTIO_MMC(vdev);
-    SDBus *sdbus = &vmmc->sdbus;
+    // VirtIOMMC *vmmc = VIRTIO_MMC(vdev);
 
     if(req->is_request) {
         SDRequest sdreq;
         sdreq.cmd = (uint8_t)req->opcode;
         sdreq.arg = req->arg;
+        sdreq.crc = (uint8_t)req->flags; 
         printf("[mmcpcidebug] virtio-mmc.c: sdreq.cmd = %d, arg = %d\n", sdreq.cmd, sdreq.arg);
-        sdbus_do_command(sdbus, &sdreq, response);
     } else if(req->is_set_ios) {
         printf("[mmcpcidebug] virtio-mmc.c: setting voltage = %d\n", req->vdd);
-        sdbus_set_voltage(sdbus, req->vdd);
     }
 }
 
@@ -57,6 +58,40 @@ static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
     virtio_notify(vdev, vq);
 }
 
+static void virtio_mmc_virtual_queue_init(VirtIODevice *vdev, VirtIOMMC *vmmc) {
+    // printf("[mmcpcidebug] virtio-mmc.c: virtio_mmc_virtual_queue_init called\n");
+    vmmc->vq = virtio_add_queue(vdev, 1, handle_input);
+}
+
+static void print_response(uint8_t *response) {
+    for(int i = 0; i < 4; i++) {
+        printf("[mmcpcidebug] virtio-mmc.c: response[%d] = %d\n", i, response[i]);
+    }
+}
+
+static void do_testing_stuff(SDState *sd) {
+    printf("[mmcpcidebug] virtio-mmc.c: do_testing_stuff called\n");
+
+    uint8_t response[4]={0};
+    SDRequest request;
+    request.arg = 0;
+    request.crc = 0;
+
+    request.cmd = 0;
+    sd_do_command(sd, &request, response);
+    printf("[mmcpcidebug] virtio-mmc.c: 1) response = %d\n", response);
+    print_response(response);
+
+    request.cmd = 8;
+    request.arg = 0x1AA;
+    sd_do_command(sd, &request, response);
+    printf("[mmcpcidebug] virtio-mmc.c: 2) response = %d\n", response);
+    print_response(response);
+    
+
+
+}
+
 static void virtio_mmc_realize(DeviceState *dev, Error **errp) {
     printf("[mmcpcidebug] virtio-mmc.c: virtio_mmc_realize called\n");
     VirtIODevice *vdev = VIRTIO_DEVICE(dev);
@@ -65,11 +100,22 @@ static void virtio_mmc_realize(DeviceState *dev, Error **errp) {
     printf("[mmcpcidebug] virtio-mmc.c: VIRTIO_ID_MMC = %d\n", VIRTIO_ID_MMC);
     virtio_init(vdev, VIRTIO_ID_MMC, 0);
 
-    vmmc->vq = virtio_add_queue(vdev, 1, handle_input);
+    virtio_mmc_virtual_queue_init(vdev, vmmc);
 
-    qbus_init(&vmmc->sdbus, sizeof(vmmc->sdbus), TYPE_SD_BUS, dev, "sd-bus");
+    BlockBackend *blk = blk_by_name("my_mmc");
+    if(!blk) {
+        printf("[mmcpcidebug] virtio-mmc.c: blk_by_name failed\n");
+        return;
+    }
+    vmmc->sd = sd_init(blk, false);
+    if(!vmmc->sd) {
+        printf("[mmcpcidebug] virtio-mmc.c: sd_init failed\n");
+        return;
+    }
+    printf("[mmcpcidebug] virtio-mmc.c: sd_init success\n");
 
-    printf("[mmcpcidebug] virtio-mmc.c: sdbus inserted before setting is %d\n", sdbus_get_inserted(&vmmc->sdbus));
+
+    do_testing_stuff(vmmc->sd);
 }
 
 static void virtio_mmc_unrealize(DeviceState *dev) {

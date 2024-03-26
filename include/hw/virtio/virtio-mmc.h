@@ -14,5 +14,5 @@
 typedef struct VirtIOMMC {
     VirtIODevice parent_obj;
     VirtQueue *vq;
-    SDBus sdbus;
+    SDState *sd;
 } VirtIOMMC;

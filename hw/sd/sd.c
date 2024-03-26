@@ -1199,18 +1199,24 @@ static sd_rsp_type_t sd_normal_command(SDState *sd, SDRequest req)
 
     case 8:  /* CMD8:   SEND_IF_COND */
         if (sd->spec_version < SD_PHY_SPECv2_00_VERS) {
+            printf("SD: CMD8 not supported in spec version %s\n",
+                   sd_version_str(sd->spec_version));
             break;
         }
         if (sd->state != sd_idle_state) {
+            printf("SD: CMD8 in a wrong state: %s\n",
+                   sd_state_name(sd->state));
             break;
         }
         sd->vhs = 0;
 
         /* No response if not exactly one VHS bit is set.  */
         if (!(req.arg >> 8) || (req.arg >> (ctz32(req.arg & ~0xff) + 1))) {
+            printf("SD: CMD8 invalid VHS: 0x%08x\n", req.arg);
             return sd_is_spi(sd) ? sd_r7 : sd_r0;
         }
 
+        printf("SD: CMD8 ACCEPT VHS: 0x%08x\n", req.arg);
         /* Accept.  */
         sd->vhs = req.arg;
         return sd_r7;
@@ -1741,6 +1747,7 @@ static int cmd_valid_while_locked(SDState *sd, const uint8_t cmd)
 
 int sd_do_command(SDState *sd, SDRequest *req,
                   uint8_t *response) {
+    printf("sd_do_command: sd->card_status = %d\n", sd->card_status);
     int last_state;
     sd_rsp_type_t rtype;
     int rsplen;

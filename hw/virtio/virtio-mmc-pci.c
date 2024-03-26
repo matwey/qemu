@@ -2,6 +2,8 @@
 
 #include "hw/virtio/virtio-pci.h"
 #include "hw/virtio/virtio-mmc.h"
+#include "hw/qdev-properties-system.h"
+#include "qemu/typedefs.h"
 
 typedef struct VirtIOMMCPCI VirtIOMMCPCI;
 
@@ -15,6 +17,7 @@ DECLARE_INSTANCE_CHECKER(VirtIOMMCPCI, VIRTIO_MMC_PCI,
 struct VirtIOMMCPCI {
     VirtIOPCIProxy parent_obj;
     VirtIOMMC vdev;
+    BlockBackend *blk;
 };
 
 static void virtio_mmc_pci_instance_init(Object *obj)
@@ -42,12 +45,19 @@ static void virtio_mmc_pci_realize(VirtIOPCIProxy *vpci_dev, Error **errp)
     object_property_set_bool(OBJECT(vdev), "realized", true, errp);
 }
 
+static Property virtio_mmc_properties[] = {
+    // DEFINE_PROP_DRIVE("drive", VirtIOMMCPCI, blk),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
 static void virtio_mmc_pci_class_init(ObjectClass *klass, void *data)
 {
     printf("[mmcpcidebug] virtio-mmc-pci.c: virtio_mmc_pci_class_init called\n");
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtioPCIClass *k = VIRTIO_PCI_CLASS(klass);
     PCIDeviceClass *pcidev_k = PCI_DEVICE_CLASS(klass);
+
+    device_class_set_props(dc, virtio_mmc_properties);
 
     k->realize = virtio_mmc_pci_realize;
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
