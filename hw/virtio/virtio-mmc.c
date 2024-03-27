@@ -22,17 +22,25 @@ typedef struct virtio_mmc_req {
     uint16_t vdd;
 } virtio_mmc_req;
 
-static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, uint8_t *response) {
+typedef struct virtio_mmc_resp {
+	uint8_t response[4];
+    int resp_len;
+} virtio_mmc_resp;
+
+static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, virtio_mmc_resp *response) {
     printf("[mmcpcidebug] virtio-mmc.c: handle_mmc_request called\n");
 
-    // VirtIOMMC *vmmc = VIRTIO_MMC(vdev);
+    VirtIOMMC *vmmc = VIRTIO_MMC(vdev);
 
     if(req->is_request) {
         SDRequest sdreq;
         sdreq.cmd = (uint8_t)req->opcode;
         sdreq.arg = req->arg;
-        sdreq.crc = (uint8_t)req->flags; 
-        printf("[mmcpcidebug] virtio-mmc.c: sdreq.cmd = %d, arg = %d\n", sdreq.cmd, sdreq.arg);
+        // sdreq.crc = (uint8_t)req->flags;
+        printf("[mmcpcidebug] virtio-mmc.c: sdreq.cmd = %d, arg = %x\n", sdreq.cmd, sdreq.arg);
+        int resp_len = sd_do_command(vmmc->sd, &sdreq, response->response);
+        response->resp_len = resp_len;
+        printf("[mmcpcidebug] virtio-mmc.c: response = %x, %x, %x, %x; resp_len = %d\n", response->response[0], response->response[1], response->response[2], response->response[3], resp_len);
     } else if(req->is_set_ios) {
         printf("[mmcpcidebug] virtio-mmc.c: setting voltage = %d\n", req->vdd);
     }
@@ -48,10 +56,10 @@ static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
 
     iov_to_buf(elem->out_sg, elem->out_num, 0, &data, sizeof(virtio_mmc_req));
 
-    uint8_t response;
+    virtio_mmc_resp response;
     handle_mmc_request(vdev, &data, &response);
 
-    iov_from_buf(elem->in_sg, elem->in_num, 0, &response, sizeof(uint8_t));
+    iov_from_buf(elem->in_sg, elem->in_num, 0, &response, sizeof(virtio_mmc_resp));
 
     virtqueue_push(vq, elem, 1);
 
@@ -70,6 +78,7 @@ static void print_response(uint8_t *response) {
 }
 
 static void do_testing_stuff(SDState *sd) {
+    return;
     printf("[mmcpcidebug] virtio-mmc.c: do_testing_stuff called\n");
 
     uint8_t response[4]={0};
