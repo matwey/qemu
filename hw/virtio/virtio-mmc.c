@@ -17,14 +17,17 @@ typedef struct virtio_mmc_req {
 	uint32_t flags;
 	uint32_t blocks;
 	uint32_t blksz;
+    bool is_data;
+    bool is_write;
 
     bool is_set_ios;
     uint16_t vdd;
 } virtio_mmc_req;
 
 typedef struct virtio_mmc_resp {
-	uint8_t response[4];
+	uint32_t response[4];
     int resp_len;
+    uint8_t buf[1024];
 } virtio_mmc_resp;
 
 static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, virtio_mmc_resp *response) {
@@ -38,9 +41,41 @@ static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, virtio_m
         sdreq.arg = req->arg;
         // sdreq.crc = (uint8_t)req->flags;
         printf("[mmcpcidebug] virtio-mmc.c: sdreq.cmd = %d, arg = %x\n", sdreq.cmd, sdreq.arg);
-        int resp_len = sd_do_command(vmmc->sd, &sdreq, response->response);
+        int resp_len = sd_do_command(vmmc->sd, &sdreq, (uint8_t*)response->response);
         response->resp_len = resp_len;
-        printf("[mmcpcidebug] virtio-mmc.c: response = %x, %x, %x, %x; resp_len = %d\n", response->response[0], response->response[1], response->response[2], response->response[3], resp_len);
+
+        // fix response: 0xaa010000 -> 0x000001aa
+        for(int i=0;i<resp_len/4;i++) {
+            uint32_t temp = response->response[i];
+            response->response[i] = ((temp & 0xff) << 24) | ((temp & 0xff00) << 8) | ((temp & 0xff0000) >> 8) | ((temp & 0xff000000) >> 24);
+        }
+
+        // vvv was used when response was u8 instead of u32 vvv
+        // // reverse the response (because for some reason (probably endianness) 
+        // // the response is reversed in the sd_do_command function)
+        // for(int i = 0; i < 2; i++) {
+        //     uint8_t temp = response->response[i];
+        //     response->response[i] = response->response[3-i];
+        //     response->response[3-i] = temp;
+        // }
+
+        printf("[mmcpcidebug] resp_len = %d; response: ", resp_len);
+        for(int i=0;i<resp_len/4;i++) {
+            printf("%x, ", response->response[i]);
+        }
+        printf("\n");
+
+        if(req->is_data){
+            for(uint32_t i=0;i<req->blocks;i++) {
+                for(int j=0;j<req->blksz;j++) {
+                    if(req->is_write){
+                        sd_write_byte(vmmc->sd, response->buf[i*req->blksz+j]);
+                    } else {
+                        response->buf[i*req->blksz+j] = sd_read_byte(vmmc->sd);
+                    }
+                }
+            }
+        }
     } else if(req->is_set_ios) {
         printf("[mmcpcidebug] virtio-mmc.c: setting voltage = %d\n", req->vdd);
     }
