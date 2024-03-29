@@ -27,7 +27,7 @@ typedef struct virtio_mmc_req {
 typedef struct virtio_mmc_resp {
 	uint32_t response[4];
     int resp_len;
-    uint8_t buf[1024];
+    uint8_t buf[10240];
 } virtio_mmc_resp;
 
 static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, virtio_mmc_resp *response) {
@@ -99,6 +99,8 @@ static void handle_input(VirtIODevice *vdev, VirtQueue *vq) {
     virtqueue_push(vq, elem, 1);
 
     virtio_notify(vdev, vq);
+
+    printf("[mmcpcidebug] virtio-mmc.c: handle_input done\n");
 }
 
 static void virtio_mmc_virtual_queue_init(VirtIODevice *vdev, VirtIOMMC *vmmc) {
@@ -123,13 +125,13 @@ static void do_testing_stuff(SDState *sd) {
 
     request.cmd = 0;
     sd_do_command(sd, &request, response);
-    printf("[mmcpcidebug] virtio-mmc.c: 1) response = %d\n", response);
+    printf("[mmcpcidebug] virtio-mmc.c: 1) response = %d\n", *(uint32_t*)response);
     print_response(response);
 
     request.cmd = 8;
     request.arg = 0x1AA;
     sd_do_command(sd, &request, response);
-    printf("[mmcpcidebug] virtio-mmc.c: 2) response = %d\n", response);
+    printf("[mmcpcidebug] virtio-mmc.c: 2) response = %d\n", *(uint32_t*)response);
     print_response(response);
     
 
