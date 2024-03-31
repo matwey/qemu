@@ -25,9 +25,9 @@ typedef struct virtio_mmc_req {
 } virtio_mmc_req;
 
 typedef struct virtio_mmc_resp {
-	uint32_t response[4];
+    uint32_t response[4];
     int resp_len;
-    uint8_t buf[10240];
+    uint8_t buf[4096];
 } virtio_mmc_resp;
 
 static void handle_mmc_request(VirtIODevice *vdev, virtio_mmc_req *req, virtio_mmc_resp *response) {
